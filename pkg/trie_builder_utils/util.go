@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"math/big"
 
-	"github.com/ethereum/backup/go-ethereum/common"
-	"github.com/ethereum/backup/go-ethereum/trie"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -39,12 +38,14 @@ func buildKeySetWithBranchToDepth(depth int) ([]string, [][]byte, []string, []by
 	storageLeafKeys := make([][]byte, 0)
 	storageLeafKeyStrs := make([]string, 0)
 	i := 0
+	j := 1
 	for {
 		slots = append(slots, common.BigToHash(big.NewInt(int64(i))).String())
-		storageLeafKeys = append(storageLeafKeys, trie.CompactToHex(crypto.Keccak256(common.BigToHash(big.NewInt(int64(i))).Bytes())))
+		storageLeafKeys = append(storageLeafKeys, LeafKeyToHexNibbles(crypto.Keccak256(common.BigToHash(big.NewInt(int64(i))).Bytes())))
 		storageLeafKeyStrs = append(storageLeafKeyStrs, crypto.Keccak256Hash(common.BigToHash(big.NewInt(int64(i))).Bytes()).String())
 		i++
-		if len(storageLeafKeys) > depth {
+		if len(storageLeafKeys) > depth * j {
+			j++
 			ok, key1, key2 := checkBranchDepthOfSet(storageLeafKeys, depth)
 			if ok {
 				return slots, storageLeafKeys, storageLeafKeyStrs, key1, key2
@@ -82,4 +83,21 @@ func containsPrefix(key, growingPrefix, potentialAddition []byte) (bool, []byte)
 		return true, append(growingPrefix, potentialAddition...)
 	}
 	return false, growingPrefix
+}
+
+func LeafKeyToHexNibbles(compactLeafKey []byte) []byte {
+	if len(compactLeafKey) == 0 {
+		return compactLeafKey
+	}
+	return keybytesToHex(compactLeafKey)
+}
+
+func keybytesToHex(str []byte) []byte {
+	l := len(str)*2
+	var nibbles = make([]byte, l)
+	for i, b := range str {
+		nibbles[i*2] = b / 16
+		nibbles[i*2+1] = b % 16
+	}
+	return nibbles
 }
