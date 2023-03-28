@@ -39,12 +39,19 @@ func buildKeySetWithBranchToDepth(depth int) ([]string, [][]byte, []string, []by
 	storageLeafKeyStrs := make([]string, 0)
 	i := 0
 	j := 1
+	k := depth
+	if depth > 5 {
+		k = 10000
+	}
+	if depth > 7 {
+		k = 50000
+	}
 	for {
 		slots = append(slots, common.BigToHash(big.NewInt(int64(i))).String())
 		storageLeafKeys = append(storageLeafKeys, LeafKeyToHexNibbles(crypto.Keccak256(common.BigToHash(big.NewInt(int64(i))).Bytes())))
 		storageLeafKeyStrs = append(storageLeafKeyStrs, crypto.Keccak256Hash(common.BigToHash(big.NewInt(int64(i))).Bytes()).String())
 		i++
-		if len(storageLeafKeys) > depth * j {
+		if len(storageLeafKeys) > k*j {
 			j++
 			ok, key1, key2 := checkBranchDepthOfSet(storageLeafKeys, depth)
 			if ok {
@@ -93,7 +100,7 @@ func LeafKeyToHexNibbles(compactLeafKey []byte) []byte {
 }
 
 func keybytesToHex(str []byte) []byte {
-	l := len(str)*2
+	l := len(str) * 2
 	var nibbles = make([]byte, l)
 	for i, b := range str {
 		nibbles[i*2] = b / 16
